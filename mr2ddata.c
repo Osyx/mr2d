@@ -2,7 +2,6 @@
 
 char textbuffer[4][16];
 char imgbuffer[32][128];
-int hello = 2;
 
 static const uint8_t const font[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
