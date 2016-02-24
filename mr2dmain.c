@@ -1,6 +1,5 @@
 #include <pic32mx.h>
 #include <stdint.h>
-#include <math.h>
 
 #define DISPLAY_VDD PORTFbits.RF6
 #define DISPLAY_VBATT PORTFbits.RF5
@@ -18,7 +17,7 @@
 #define DISPLAY_RESET_MASK 0x200
 
 extern char textbuffer[4][16];
-extern char imgbuffer[32][128];
+extern char imgbuffer[4][128];
 extern const uint8_t const icon[128];
 extern const uint8_t const hej[4096];
 extern const uint8_t const box[4096];
@@ -26,6 +25,15 @@ extern const uint8_t const box[4096];
 void delay(int cyc) {
 	int i;
 	for(i = cyc; i > 0; i--);
+}
+
+int pow(x, a){
+	int i;
+	int pow_val = 1;
+	for(i = 0; i < a; i++){
+		pow_val *= x;
+	}
+	return pow_val;
 }
 
 uint8_t spi_send_recv(uint8_t data) {
@@ -95,10 +103,12 @@ void add_img(int x, int y, const uint8_t const *data){
 void display_img() {
 	int i, j;
 
-	for(i = 0; i < 32; i++) {
+	for(i = 0; i < 4; i++) {
 		DISPLAY_COMMAND_DATA_PORT &= ~DISPLAY_COMMAND_DATA_MASK;
-		spi_send_recv(0x20);
+		spi_send_recv(0x22);
 		spi_send_recv(i);
+
+		spi_send_recv(0x10);
 
 		DISPLAY_COMMAND_DATA_PORT |= DISPLAY_COMMAND_DATA_MASK;
 
@@ -116,22 +126,26 @@ void blackout (int x){
 	}
 }
 
-void 8bin_conv (const uint8_t const *data) {
-	 const uint8_t const new_data[512];
-	 int 1bit = 0;
-	 int 8bit = 0;
-	 int bin = 0;
-	 while (8bit < 512){
-
+const uint8_t const* eightbin_conv (const uint8_t const *data) {
+	 uint8_t new_data[512];
+	 int bin, eightbit;
+	 int onebit = 0;
+	 int onebit_spot = 0;
+	 for (eightbit = 0; eightbit < 512; eightbit++){
 			for (bin = 0; bin <= 7; bin++){
-				new_data[8bit] += data[1bit] * pow(2, bin);
-				1bit += 128;
-				if (bin == 8)
-					bin = 0;
-				8bit += 1;
+				new_data[eightbit] += data[onebit] * pow(2, bin);
+				onebit += 128;
 			}
-
+			onebit_spot += 1;
+			if (onebit_spot == 128)
+				onebit_spot = 1024;
+			if (onebit_spot == 1152)
+				onebit_spot = 2048;
+			if (onebit_spot == 2176)
+				onebit_spot = 3072;
+			onebit = onebit_spot;
 	 }
+	 return new_data;
 }
 
 int getbtns (void) {
@@ -174,9 +188,11 @@ int main(void) {
 	/* Turn on SPI */
 	SPI2CONSET = 0x8000;
 	display_init();
+	add_img(0, 0, eightbin_conv(box));
+
 
 	while(1) {
-		blackout(255);
+		//blackout(255);
 		delay(10000);
 		if (getbtns() == 1) {
 			blackout(255);
@@ -185,7 +201,7 @@ int main(void) {
 			blackout(0);
 		}
 		if (getbtns() == 4) {
-			add_img(0, 0, box);
+			add_img(0, 0, eightbin_conv(box));
 			display_img();
 			delay(10000);
 		}
