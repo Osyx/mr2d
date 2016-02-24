@@ -1,5 +1,6 @@
 #include <pic32mx.h>
 #include <stdint.h>
+#include <math.h>
 
 #define DISPLAY_VDD PORTFbits.RF6
 #define DISPLAY_VBATT PORTFbits.RF5
@@ -113,6 +114,24 @@ void blackout (int x){
 			imgbuffer[i][j] = x;
 		}
 	}
+}
+
+void 8bin_conv (const uint8_t const *data) {
+	 const uint8_t const new_data[512];
+	 int 1bit = 0;
+	 int 8bit = 0;
+	 int bin = 0;
+	 while (8bit < 512){
+
+			for (bin = 0; bin <= 7; bin++){
+				new_data[8bit] += data[1bit] * pow(2, bin);
+				1bit += 128;
+				if (bin == 8)
+					bin = 0;
+				8bit += 1;
+			}
+
+	 }
 }
 
 int getbtns (void) {
