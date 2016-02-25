@@ -21,6 +21,7 @@ extern char imgbuffer[4][128];
 extern const uint8_t const icon[128];
 extern const uint8_t const hej[4096];
 extern const uint8_t const box[4096];
+//This is a Comment(r)
 
 void delay(int cyc) {
 	int i;
