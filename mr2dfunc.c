@@ -18,6 +18,12 @@
 
 extern char textbuffer[4][16];
 extern char imgbuffer[4][128];
+extern const uint8_t const Start_start[512];
+extern const uint8_t const start_screen[512];
+extern const uint8_t const Start_settings[512];
+extern const uint8_t const ground[512];
+extern const uint8_t const hat[32];
+extern const uint8_t const hat1[64];
 
 void hardware_init (){
   /* Set up peripheral bus clock */
@@ -216,4 +222,81 @@ const uint8_t const* eightbin_conv (int bredd, const uint8_t const *data) {
 int getbtns (void) {
   int retur = (PORTD & 0x00e0) >> 5;
   return retur;
+}
+
+void start(){
+  add_img(0,0,512, start_screen);
+  while(1){
+    display_img();
+    if (getbtns() == 1)
+      break;
+  }
+  delay(10000);
+}
+
+void start_select() {
+  delay(100000);
+  int wait = 0;
+  int previous = 0;
+  while(1){
+    if (wait < 1) {
+      if (getbtns() == 1) {
+        if (previous == 0) {
+          add_img(0, 0, 512, Start_start);
+          previous = 1;
+        }
+        else {
+          add_img(0, 0, 512, Start_settings);
+          previous = 0;
+        }
+        wait = 700;
+      }
+      if (getbtns() == 2) {
+        if (previous == 0) {
+          add_img(0, 0, 512, Start_start);
+          previous = 1;
+        }
+        else {
+          add_img(0, 0, 512, Start_settings);
+          previous = 0;
+        }
+        wait = 700;
+      }
+      if (getbtns() == 4)
+          break;
+      display_img();
+    }
+    if (wait > 0)
+      wait--;
+    delay(10000);
+  }
+}
+
+void run_game() {
+  int j_time = 0;
+	int y = 2;
+	int j_wait = 0;
+
+	while(1) {
+		if (j_time == 28){
+			y = 2;
+			j_time = 0;
+		}
+		add_img(0, 0, 512, ground);
+		add_img(61, y, 8, eightbin_conv(8, hat1));
+		delay(100000);
+		if (j_wait == 0){
+			if (getbtns() == 1) {
+
+				y = 1;
+				j_wait = 18;
+			}
+		}
+		display_img();
+		j_time++;
+		if (j_wait > 0){
+				j_wait--;
+		}
+
+	}
 }
