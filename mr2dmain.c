@@ -21,6 +21,9 @@ extern char imgbuffer[4][128];
 extern const uint8_t const icon[128];
 extern const uint8_t const hej[4096];
 extern const uint8_t const box[4096];
+extern const uint8_t const hello[4096];
+
+uint8_t new_data[512];
 
 void delay(int cyc) {
 	int i;
@@ -108,12 +111,31 @@ void display_img() {
 		spi_send_recv(0x22);
 		spi_send_recv(i);
 
+		spi_send_recv(0xf);
 		spi_send_recv(0x10);
 
 		DISPLAY_COMMAND_DATA_PORT |= DISPLAY_COMMAND_DATA_MASK;
 
 		for(j = 0; j < 128; j++)
 			spi_send_recv(~imgbuffer[i][j]);
+	}
+}
+
+void display_image(int x, const uint8_t *data) {
+	int i, j;
+
+	for(i = 0; i < 4; i++) {
+		DISPLAY_COMMAND_DATA_PORT &= ~DISPLAY_COMMAND_DATA_MASK;
+		spi_send_recv(0x22);
+		spi_send_recv(i);
+
+		spi_send_recv(x & 0xF);
+		spi_send_recv(0x10 | ((x >> 4) & 0xF));
+
+		DISPLAY_COMMAND_DATA_PORT |= DISPLAY_COMMAND_DATA_MASK;
+
+		for(j = 0; j < 128; j++)
+			spi_send_recv(~data[i*128 + j]);
 	}
 }
 
@@ -127,7 +149,10 @@ void blackout (int x){
 }
 
 const uint8_t const* eightbin_conv (const uint8_t const *data) {
-	 uint8_t new_data[512];
+	 int i;
+	 for (i = 0; i < 512; i++){
+		 new_data[i] = 0;
+	 }
 	 int bin, eightbit;
 	 int onebit = 0;
 	 int onebit_spot = 0;
@@ -188,11 +213,10 @@ int main(void) {
 	/* Turn on SPI */
 	SPI2CONSET = 0x8000;
 	display_init();
-	add_img(0, 0, eightbin_conv(box));
 
 
 	while(1) {
-		//blackout(255);
+		blackout(255);
 		delay(10000);
 		if (getbtns() == 1) {
 			blackout(255);
@@ -201,9 +225,7 @@ int main(void) {
 			blackout(0);
 		}
 		if (getbtns() == 4) {
-			add_img(0, 0, eightbin_conv(box));
-			display_img();
-			delay(10000);
+			add_img(0, 0, eightbin_conv(hello));
 		}
 		display_img();
 
