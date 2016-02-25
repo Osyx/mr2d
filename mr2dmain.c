@@ -22,7 +22,6 @@ extern const uint8_t const icon[128];
 extern const uint8_t const hej[4096];
 extern const uint8_t const box[4096];
 //This is a Comment(r)
-//This is another comment (c)
 
 void delay(int cyc) {
 	int i;
