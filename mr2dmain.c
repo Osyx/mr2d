@@ -5,8 +5,9 @@ int main(void) {
 
 	hardware_init();
 	display_init();
-	start();
-	start_select();
+	//start();
+	//start_select();
+	//story();
 	run_game();
 
 	return 0;

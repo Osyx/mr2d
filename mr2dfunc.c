@@ -22,7 +22,9 @@ extern const uint8_t const Start_start[512];
 extern const uint8_t const start_screen[512];
 extern const uint8_t const Start_settings[512];
 extern const uint8_t const ground[512];
+extern const uint8_t const ep2[512];
 extern const uint8_t const hat[32];
+extern const uint8_t const hole[16];
 extern const uint8_t const hat1[64];
 
 void hardware_init (){
@@ -272,31 +274,51 @@ void start_select() {
   }
 }
 
+void story(){
+  add_img(0,0,512, ep2);
+  while(1){
+    display_img();
+    if (getbtns() == 1)
+      break;
+  }
+  delay(1000000);
+}
+
 void run_game() {
   int j_time = 0;
 	int y = 2;
 	int j_wait = 0;
-
+	double hole_x = 128;
 	while(1) {
+		if (y == 0)
+			//break;
 		if (j_time == 28){
 			y = 2;
 			j_time = 0;
 		}
+		if(y == 2 && (hole_x < 61) && ((hole_x + 15) > 61)) {
+				y = 3;
+		}
 		add_img(0, 0, 512, ground);
+		add_img(hole_x, 3, 16, hole);
 		add_img(61, y, 8, eightbin_conv(8, hat1));
 		delay(100000);
 		if (j_wait == 0){
 			if (getbtns() == 1) {
-
-				y = 1;
-				j_wait = 18;
+					y = 1;
+					j_wait = 18;
 			}
+		}
+		if (getbtns() == 2) {
+				add_img(80, 3, 16, hole);
 		}
 		display_img();
 		j_time++;
 		if (j_wait > 0){
 				j_wait--;
 		}
-
+		hole_x -= 0.5;
+		if (hole_x < -16)
+			hole_x = 128;
 	}
 }
