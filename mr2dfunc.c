@@ -290,13 +290,14 @@ void run_game() {
 	int j_wait = 0;
 	double hole_x = 128;
 	while(1) {
-		if (y == 0)
+		if (y == 0){
 			//break;
+		}
 		if (j_time == 28){
 			y = 2;
 			j_time = 0;
 		}
-		if(y == 2 && (hole_x < 61) && ((hole_x + 15) > 61)) {
+		if(y == 2 && (hole_x < 61) && (hole_x > 53)) {
 				y = 3;
 		}
 		add_img(0, 0, 512, ground);
