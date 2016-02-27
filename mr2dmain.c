@@ -2,7 +2,6 @@
 #include <stdint.h>
 
 int main(void) {
-
 	hardware_init();
 	display_init();
 	//start();
