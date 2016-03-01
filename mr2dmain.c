@@ -5,10 +5,11 @@ int main(void) {
 
 	hardware_init();
 	display_init();
-	//start();
-	//start_select();
-	//story();
+	start();
+	start_select();
+	opening();
 	run_game();
+	you_died();
 
 	return 0;
 }

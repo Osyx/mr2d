@@ -16,6 +16,7 @@
 #define DISPLAY_RESET_PORT PORTG
 #define DISPLAY_RESET_MASK 0x200
 
+// Declare all constants and the buffers (vectors).
 extern char textbuffer[4][16];
 extern char imgbuffer[4][128];
 extern const uint8_t const Start_start[512];
@@ -26,6 +27,9 @@ extern const uint8_t const ep2[512];
 extern const uint8_t const hat[32];
 extern const uint8_t const hole[16];
 extern const uint8_t const hat1[64];
+extern const uint8_t const died[64];
+extern const uint8_t const victory[64];
+extern const uint8_t const story[64];
 
 void hardware_init (){
   /* Set up peripheral bus clock */
@@ -63,11 +67,13 @@ void hardware_init (){
 	SPI2CONSET = 0x8000;
 }
 
+// Delay function which does its job but not efficently.
 void delay(int cyc) {
 	int i;
 	for(i = cyc; i > 0; i--);
 }
 
+// Function to calculate x to the power of a.
 int pow(x, a){
 	int i;
 	int pow_val = 1;
@@ -77,6 +83,7 @@ int pow(x, a){
 	return pow_val;
 }
 
+// Write the buffer vector to the display buffer.
 uint8_t spi_send_recv(uint8_t data) {
 	while(!(SPI2STAT & 0x08));
 	SPI2BUF = data;
@@ -84,6 +91,7 @@ uint8_t spi_send_recv(uint8_t data) {
 	return SPI2BUF;
 }
 
+// Initialize the display
 void display_init() {
 	DISPLAY_COMMAND_DATA_PORT &= ~DISPLAY_COMMAND_DATA_MASK;
 	delay(10);
@@ -121,6 +129,7 @@ void display_init() {
 	}
 }
 
+// Function to diplay a string of text on a certain y value of the screen
 void display_string(int line, char *s) {
 	int i;
 	if(line < 0 || line >= 4)
@@ -136,6 +145,7 @@ void display_string(int line, char *s) {
 			textbuffer[line][i] = ' ';
 }
 
+// Function to add a data vector (constant) to the display buffer vector.
 void add_img(int y, int x, int data_end, const uint8_t const *data) {
 	int i, j;
 	int z = 0;
@@ -150,6 +160,7 @@ void add_img(int y, int x, int data_end, const uint8_t const *data) {
 	}
 }
 
+// Function to send the display buffer vector to the display buffer.
 void display_img() {
 	int i, j;
 
@@ -168,33 +179,7 @@ void display_img() {
 	}
 }
 
-void display_image(int x, const uint8_t *data) {
-	int i, j;
-
-	for(i = 0; i < 4; i++) {
-		DISPLAY_COMMAND_DATA_PORT &= ~DISPLAY_COMMAND_DATA_MASK;
-		spi_send_recv(0x22);
-		spi_send_recv(i);
-
-		spi_send_recv(x & 0xF);
-		spi_send_recv(0x10 | ((x >> 4) & 0xF));
-
-		DISPLAY_COMMAND_DATA_PORT |= DISPLAY_COMMAND_DATA_MASK;
-
-		for(j = 0; j < 128; j++)
-			spi_send_recv(~data[i*128 + j]);
-	}
-}
-
-void blackout (int x){
-	int i, j;
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 128; j++) {
-			imgbuffer[i][j] = x;
-		}
-	}
-}
-
+// Function to convert a 4096 vector to a 512 vector which we can send to the display.
 const uint8_t const* eightbin_conv (int bredd, const uint8_t const *data) {
 	 uint8_t new_data[bredd * 4];
 	 int i;
@@ -221,11 +206,13 @@ const uint8_t const* eightbin_conv (int bredd, const uint8_t const *data) {
 	 return new_data;
 }
 
+// Function to get the correct button that is pressed.
 int getbtns (void) {
   int retur = (PORTD & 0x00e0) >> 5;
   return retur;
 }
 
+// Display the start screen.
 void start(){
   add_img(0,0,512, start_screen);
   while(1){
@@ -236,6 +223,7 @@ void start(){
   delay(10000);
 }
 
+// Display the menu.
 void start_select() {
   delay(100000);
   int wait = 0;
@@ -274,7 +262,8 @@ void start_select() {
   }
 }
 
-void story(){
+// Display Ep2 screen.
+void opening(){
   add_img(0,0,512, ep2);
   while(1){
     display_img();
@@ -284,19 +273,34 @@ void story(){
   delay(1000000);
 }
 
+// Display the story element
+void opening2(){
+  add_img(0,0,512, story);
+  while(1){
+    display_img();
+    if (getbtns() == 1)
+      break;
+  }
+  delay(1000000);
+}
+
+// Run the actual game
 void run_game() {
   int j_time = 0;
 	int y = 2;
 	int j_wait = 0;
 	double hole_x = 128;
+
+	// Game loop
 	while(1) {
-		if (y == 0){
-			//break;
-		}
+
+		// So that the user can't "fly".
 		if (j_time == 28){
 			y = 2;
 			j_time = 0;
 		}
+
+		// Check if user falls into hole.
 		if(y == 2 && (hole_x < 61) && (hole_x > 53)) {
 				y = 3;
 		}
@@ -305,13 +309,12 @@ void run_game() {
 		add_img(61, y, 8, eightbin_conv(8, hat1));
 		delay(100000);
 		if (j_wait == 0){
+
+			// Jump.
 			if (getbtns() == 1) {
 					y = 1;
 					j_wait = 18;
 			}
-		}
-		if (getbtns() == 2) {
-				add_img(80, 3, 16, hole);
 		}
 		display_img();
 		j_time++;
@@ -321,5 +324,30 @@ void run_game() {
 		hole_x -= 0.5;
 		if (hole_x < -16)
 			hole_x = 128;
+		if (y == 3){
+			break;
+		}
 	}
+}
+
+// Display the You Died screen.
+void you_died(){
+  add_img(0,0,512, died);
+  while(1){
+    display_img();
+    if (getbtns() == 1)
+      break;
+  }
+  delay(1000000);
+}
+
+// Display the End screen.
+void victorious(){
+  add_img(0,0,512, victory);
+  while(1){
+    display_img();
+    if (getbtns() == 1)
+      break;
+  }
+  delay(1000000);
 }
