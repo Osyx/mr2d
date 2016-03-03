@@ -10,6 +10,7 @@ int main(void) {
 	opening();
 	run_game();
 	you_died();
+	main();
 
 	return 0;
 }

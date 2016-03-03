@@ -32,6 +32,8 @@ extern const uint8_t const victory[];
 extern const uint8_t const story[];
 extern const uint8_t const flower[];
 extern const uint8_t const jump[];
+uint32_t random_seed = 0;
+uint32_t random_seed2 = 0;
 
 void hardware_init (){
   /* Set up peripheral bus clock */
@@ -129,6 +131,15 @@ void display_init() {
 			imgbuffer[i][j] = 255;
 		}
 	}
+}
+
+static uint32_t rand(uint32_t x)
+{
+    x ^= x>>11;
+    x ^= x<<7 & 0x9D2C5680;
+    x ^= x<<15 & 0xEFC60000;
+    x ^= x>>18;
+    return x;
 }
 
 // Function to diplay a string of text on a certain y value of the screen
@@ -235,6 +246,8 @@ void start_select() {
   int wait = 0;
   int previous = 0;
   while(1){
+		random_seed2 += 11;
+		random_seed += 1;
     if (wait < 1) {
       if (getbtns() == 1) {
         if (previous == 0) {
@@ -295,12 +308,13 @@ void run_game() {
   int j_time = 0;
 	int char_y = 2;
 	int j_wait = 0;
-	int object = 0;
+	int object = rand(random_seed) & 1;
 	double object_x = 140;
+	double object2_x = 140;
 
 	// Game loop
 	while(1) {
-
+		random_seed += 1;
 		// So that the user can't "fly".
 		if (j_time == 40){
 			char_y = 2;
@@ -308,23 +322,29 @@ void run_game() {
 		}
 
 		// Check if user falls into a hole.
-		if(char_y == 2 && (object_x < 61) && (object_x > 53) && object == 1) {
+		if(char_y == 2 && (object_x < 61) && (object_x > 53)) {
 				char_y = 3;
 		}
 		// Check if user crashes into a flower.
-		if(char_y == 2 && (object_x < 65) && (object_x > 63) && object == 0) {
-				//char_y = 3;
+		if(char_y == 2 && (object2_x < 65) && (object2_x > 63)) {
+				char_y = 3;
 		}
 
 		add_img(0, 0, 512, ground);
-		//add_img(object_x, 3, 16, hole);
+
+		if (object == 0){
+				add_img(object_x, 3, 16, hole);
+		}
+		if (object == 1){
+			add_img(object2_x, 2, 4, flower);
+		}
+
 		if (j_time == 0){
-				add_img(62, char_y, 8, eightbin_conv(8, hat1));
+				add_img(62, char_y, 4, eightbin_conv(8, hat1));
 		}
 		else{
-			add_img(62, char_y, 8, eightbin_conv(8, jump));
+			add_img(62, char_y, 4, eightbin_conv(8, jump));
 		}
-		add_img(object_x, 2, 4, flower);
 		delay(100000);
 		if (j_wait == 0){
 
@@ -341,9 +361,22 @@ void run_game() {
 		if (j_wait > 0){
 				j_wait--;
 		}
-		object_x -= 0.1;
-		if (object_x < -18)
-				object_x = 140;
+
+		if (object == 1){
+				object2_x -= 0.5;
+		}
+		if (object == 0){
+			object_x -= 0.5;
+		}
+		if (object_x < -18) {
+			object = rand(random_seed) & 1;
+			object_x = 140;
+		}
+
+		if (object2_x < -18) {
+			object = rand(random_seed) & 1;
+			object2_x = 140;
+		}
 
 		if (char_y == 3){
 			break;
