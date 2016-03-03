@@ -19,17 +19,19 @@
 // Declare all constants and the buffers (vectors).
 extern char textbuffer[4][16];
 extern char imgbuffer[4][128];
-extern const uint8_t const Start_start[512];
-extern const uint8_t const start_screen[512];
-extern const uint8_t const Start_settings[512];
-extern const uint8_t const ground[512];
-extern const uint8_t const ep2[512];
-extern const uint8_t const hat[32];
-extern const uint8_t const hole[16];
-extern const uint8_t const hat1[64];
-extern const uint8_t const died[64];
-extern const uint8_t const victory[64];
-extern const uint8_t const story[64];
+extern const uint8_t const Start_start[];
+extern const uint8_t const start_screen[];
+extern const uint8_t const Start_settings[];
+extern const uint8_t const ground[];
+extern const uint8_t const ep2[];
+extern const uint8_t const hat[];
+extern const uint8_t const hole[];
+extern const uint8_t const hat1[];
+extern const uint8_t const died[];
+extern const uint8_t const victory[];
+extern const uint8_t const story[];
+extern const uint8_t const flower[];
+extern const uint8_t const jump[];
 
 void hardware_init (){
   /* Set up peripheral bus clock */
@@ -146,16 +148,22 @@ void display_string(int line, char *s) {
 }
 
 // Function to add a data vector (constant) to the display buffer vector.
-void add_img(int y, int x, int data_end, const uint8_t const *data) {
+void add_img(double x, int y, int data_end, const uint8_t const *data) {
 	int i, j;
 	int z = 0;
-	int k = 0;
-	for (i = x; i < 4; i++){
-		for(j = y; j < 128; j++){
-			if (z >= data_end)
-				break;
-			imgbuffer[i][j] = data[z];
-			z++;
+	for (i = y; i < 4; i++){
+		for(j = x; j < 128; j++){
+			if (j <= 0){
+				z++;
+			}
+			else{
+				if (z >= data_end)
+					break;
+				else {
+					imgbuffer[i][j] = data[z];
+					z++;
+				}
+			}
 		}
 	}
 }
@@ -168,8 +176,6 @@ void display_img() {
 		DISPLAY_COMMAND_DATA_PORT &= ~DISPLAY_COMMAND_DATA_MASK;
 		spi_send_recv(0x22);
 		spi_send_recv(i);
-
-		spi_send_recv(0xf);
 		spi_send_recv(0x10);
 
 		DISPLAY_COMMAND_DATA_PORT |= DISPLAY_COMMAND_DATA_MASK;
@@ -287,44 +293,59 @@ void opening2(){
 // Run the actual game
 void run_game() {
   int j_time = 0;
-	int y = 2;
+	int char_y = 2;
 	int j_wait = 0;
-	double hole_x = 128;
+	int object = 0;
+	double object_x = 140;
 
 	// Game loop
 	while(1) {
 
 		// So that the user can't "fly".
-		if (j_time == 28){
-			y = 2;
+		if (j_time == 40){
+			char_y = 2;
 			j_time = 0;
 		}
 
-		// Check if user falls into hole.
-		if(y == 2 && (hole_x < 61) && (hole_x > 53)) {
-				y = 3;
+		// Check if user falls into a hole.
+		if(char_y == 2 && (object_x < 61) && (object_x > 53) && object == 1) {
+				char_y = 3;
 		}
+		// Check if user crashes into a flower.
+		if(char_y == 2 && (object_x < 65) && (object_x > 63) && object == 0) {
+				//char_y = 3;
+		}
+
 		add_img(0, 0, 512, ground);
-		add_img(hole_x, 3, 16, hole);
-		add_img(61, y, 8, eightbin_conv(8, hat1));
+		//add_img(object_x, 3, 16, hole);
+		if (j_time == 0){
+				add_img(62, char_y, 8, eightbin_conv(8, hat1));
+		}
+		else{
+			add_img(62, char_y, 8, eightbin_conv(8, jump));
+		}
+		add_img(object_x, 2, 4, flower);
 		delay(100000);
 		if (j_wait == 0){
 
 			// Jump.
 			if (getbtns() == 1) {
-					y = 1;
-					j_wait = 18;
+					char_y = 1;
+					j_wait = 55;
 			}
 		}
 		display_img();
-		j_time++;
+		if (char_y == 1){
+				j_time++;
+		}
 		if (j_wait > 0){
 				j_wait--;
 		}
-		hole_x -= 0.5;
-		if (hole_x < -16)
-			hole_x = 128;
-		if (y == 3){
+		object_x -= 0.1;
+		if (object_x < -18)
+				object_x = 140;
+
+		if (char_y == 3){
 			break;
 		}
 	}
