@@ -7,6 +7,7 @@ int main(void) {
 	display_init();
 	start();
 	start_select();
+	settings_select();
 	opening();
 	run_game();
 	you_died();

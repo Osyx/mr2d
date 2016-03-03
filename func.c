@@ -32,6 +32,9 @@ extern const uint8_t const victory[];
 extern const uint8_t const story[];
 extern const uint8_t const flower[];
 extern const uint8_t const jump[];
+extern const uint8_t const settings_normal[];
+extern const uint8_t const settings_ds[];
+int display_settings = 0;
 uint32_t random_seed = 0;
 uint32_t random_seed2 = 0;
 
@@ -240,6 +243,48 @@ void start(){
   delay(10000);
 }
 
+// Display the settings.
+void settings_select() {
+	if (display_settings == 1){
+		delay(100000);
+		int wait = 0;
+		int previous = 0;
+		while(1){
+			if (wait < 1) {
+				if (getbtns() == 1) {
+					if (previous == 0) {
+						add_img(0, 0, 512, settings_normal);
+						previous = 1;
+					}
+					else {
+						add_img(0, 0, 512, settings_ds);
+						previous = 0;
+					}
+					wait = 700;
+				}
+				if (getbtns() == 2) {
+					if (previous == 0) {
+						add_img(0, 0, 512, settings_normal);
+						previous = 1;
+					}
+					else {
+						add_img(0, 0, 512, settings_ds);
+						previous = 0;
+					}
+					wait = 700;
+				}
+				if (getbtns() == 4){
+						//break;
+				}
+				display_img();
+			}
+			if (wait > 0)
+				wait--;
+			delay(10000);
+		}
+	}
+}
+
 // Display the menu.
 void start_select() {
   delay(100000);
@@ -271,8 +316,17 @@ void start_select() {
         }
         wait = 700;
       }
-      if (getbtns() == 4)
-          break;
+      if (getbtns() == 4){
+				if (previous == 1){
+					display_settings = 0;
+					break;
+				}
+				else {
+					display_settings = 1;
+					break;
+				}
+			}
+
       display_img();
     }
     if (wait > 0)
