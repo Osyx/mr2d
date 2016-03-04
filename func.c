@@ -436,16 +436,28 @@ void run_game() {
 			else
 				object2_x -= 0.8;
 		}
-		if (object_x < -18) {
-			object = rand(random_seed) & 1;
-			object2 = rand(random_seed2) & 1;
-			object_x = 140;
-		}
 
-		if (object2_x < -18) {
-			object = rand(random_seed) & 1;
-			object2 = rand(random_seed2) & 1;
-			object2_x = 140;
+		if (object2 != 1){
+			if (object_x < -18) {
+				object = rand(random_seed) & 1;
+				object2 = rand(random_seed2) & 1;
+				object_x = 140;
+			}
+
+			if (object2_x < -18) {
+				object = rand(random_seed) & 1;
+				object2 = rand(random_seed2) & 1;
+				object2_x = 140;
+			}
+		}
+		else {
+			if (object3_x < -18) {
+				object = rand(random_seed) & 1;
+				object2 = rand(random_seed2) & 1;
+				object_x = 140;
+				object2_x = 140;
+				object3_x = 140;
+			}
 		}
 
 		if (char_y == 3){
