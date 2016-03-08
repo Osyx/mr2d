@@ -314,7 +314,8 @@ void settings_select() {
 		int wait = 0;
 		int previous = 0;
 		while(1) {
-			if (wait < 1) {
+			//Enables your to change between the two difficulty settings
+            if (wait < 1) {
 				if (getbtns() == 1) {
 					if (previous == 0) {
 						add_img(0, 0, 512, settings_normal);
@@ -444,19 +445,19 @@ void run_game() {
 	while(1) {
 		random_seed += 1;
 		random_seed2 += 11;
-		// So that the user can't "fly".
+		// Puts the player on the ground again after jump is finished.
 		if (j_time == 40) {
 			char_y = 2;
 			j_time = 0;
 		}
-
+        //Player dies and death animation is initialized
 		if(((object == 0 && char_y == 2 && (object3_x < 57) && (object3_x > 49)) || (object == 1 && char_y == 2 && (object3_x < 65) && (object3_x > 63))) || ((char_y == 2 && (object_x < 61) && (object_x > 53)) || (char_y == 2 && (object2_x < 65) && (object2_x > 63)))) {
 				char_y = 3;
 				die = 500;
 		}
 
 		add_img(0, 0, 512, ground);
-
+        //Generating obstacles for the player to surpass
 		if (object == 0) {
 			add_img(object_x, 3, 16, hole);
 		}
@@ -473,30 +474,34 @@ void run_game() {
 				add_img(object3_x, 2, 4, flower);
 			}
 		}
-
+        
+        //Generates character on ground
 		if (j_time == 0) {
 				add_img(62, char_y, 4, eightbin_conv(8, hat1));
 		}
+        //Generates character in jump animation
 		else{
 			add_img(62, char_y, 4, eightbin_conv(8, jump));
 		}
 		delay(100000);
 		if (j_wait == 0) {
 
-			// Jump.
+			// Jump and starts counter for when jump is available again
 			if (getbtns() == 1) {
 					char_y = 1;
 					j_wait = 55;
 			}
 		}
 		display_img();
+        //Increasing counter to determine how long the players has been in the air
 		if (char_y == 1) {
 				j_time++;
 		}
-		if (j_wait > 0) {
+		//Decreasing counter to determine when the player is able to jump again
+        if (j_wait > 0) {
 				j_wait--;
 		}
-
+        //Moves the obstacles towards the player
 		if (object == 1) {
 			object2_x -= 0.8;
 		}
@@ -509,7 +514,8 @@ void run_game() {
 			else
 				object2_x -= 0.8;
 		}
-
+        
+        //Add points to the player's score and generate new obstacles
 		if (object2 != 1) {
 			if (object_x < -18) {
 				score += 1;
@@ -535,10 +541,12 @@ void run_game() {
 				object3_x = 140;
 			}
 		}
-
+    
 		if (char_y == 3) {
 			while (die > -200){
-				add_img(0, 0, 512, ground);
+				
+                //Generates background for death animation
+                add_img(0, 0, 512, ground);
 
 				if (object == 0) {
 					add_img(object_x - 4, 3, 16, hole);
@@ -556,7 +564,7 @@ void run_game() {
 						add_img(object3_x - 4, 2, 4, flower);
 					}
 				}
-
+                //Death animation
 				if (die > 400)
 					add_img(62 + 1, 1, 4, eightbin_conv(8, hat1));
 
@@ -574,7 +582,8 @@ void run_game() {
 				display_img();
 				die--;
 			}
-				if (score > highscore)
+				//Saves your score as the highscore if you did better
+                if (score > highscore)
 					highscore = score;
 				break;
 		}
@@ -590,7 +599,7 @@ void you_died() {
       break;
   }
 }
-
+//Displays the score of your recent game and the all time high score
 void score_screen() {
 	display_string(0, "Your score:");
 	display_string(1, itoaconv(score));
