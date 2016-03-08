@@ -19,6 +19,7 @@
 // Declare all constants and the buffers (vectors).
 extern char textbuffer[4][16];
 extern char imgbuffer[4][128];
+extern const uint8_t const font[];
 extern const uint8_t const Start_start[];
 extern const uint8_t const start_screen[];
 extern const uint8_t const Start_settings[];
@@ -35,10 +36,13 @@ extern const uint8_t const jump[];
 extern const uint8_t const settings_normal[];
 extern const uint8_t const settings_ds[];
 int display_settings = 0;
+int score = 0;
+int highscore = 0;
+int btn_pressed = 0;
 uint32_t random_seed = 0;
 uint32_t random_seed2 = 0;
 
-void hardware_init (){
+void hardware_init () {
   /* Set up peripheral bus clock */
 	OSCCON &= ~0x180000;
 	OSCCON |= 0x080000;
@@ -74,6 +78,41 @@ void hardware_init (){
 	SPI2CONSET = 0x8000;
 }
 
+#define ITOA_BUFSIZ ( 24 )
+char * itoaconv( int num )
+{
+  register int i, sign;
+  static char itoa_buffer[ ITOA_BUFSIZ ];
+  static const char maxneg[] = "-2147483648";
+
+  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;   /* Insert the end-of-string marker. */
+  sign = num;                           /* Save sign. */
+  if( num < 0 && num - 1 > 0 )          /* Check for most negative integer */
+  {
+    for( i = 0; i < sizeof( maxneg ); i += 1 )
+    itoa_buffer[ i + 1 ] = maxneg[ i ];
+    i = 0;
+  }
+  else
+  {
+    if( num < 0 ) num = -num;           /* Make number positive. */
+    i = ITOA_BUFSIZ - 2;                /* Location for first ASCII digit. */
+    do {
+      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit. */
+      num = num / 10;                   /* Remove digit from number. */
+      i -= 1;                           /* Move index to next empty position. */
+    } while( num > 0 );
+    if( sign < 0 )
+    {
+      itoa_buffer[ i ] = '-';
+      i -= 1;
+    }
+  }
+  /* Since the loop always sets the index i to the next empty position,
+   * we must add 1 in order to return a pointer to the first occupied position. */
+  return( &itoa_buffer[ i + 1 ] );
+}
+
 // Delay function which does its job but not efficently.
 void delay(int cyc) {
 	int i;
@@ -81,10 +120,10 @@ void delay(int cyc) {
 }
 
 // Function to calculate x to the power of a.
-int pow(x, a){
+int pow(x, a) {
 	int i;
 	int pow_val = 1;
-	for(i = 0; i < a; i++){
+	for(i = 0; i < a; i++) {
 		pow_val *= x;
 	}
 	return pow_val;
@@ -138,10 +177,10 @@ void display_init() {
 
 static uint32_t rand(uint32_t x)
 {
-    x ^= x>>11;
-    x ^= x<<7 & 0x9D2C5680;
-    x ^= x<<15 & 0xEFC60000;
-    x ^= x>>18;
+    x ^= x >> 11;
+    x ^= x << 7 & 0x9D2C5680;
+    x ^= x << 15 & 0xEFC60000;
+    x ^= x >> 18;
     return x;
 }
 
@@ -165,9 +204,9 @@ void display_string(int line, char *s) {
 void add_img(double x, int y, int data_end, const uint8_t const *data) {
 	int i, j;
 	int z = 0;
-	for (i = y; i < 4; i++){
-		for(j = x; j < 128; j++){
-			if (j <= 0){
+	for (i = y; i < 4; i++) {
+		for(j = x; j < 128; j++) {
+			if (j <= 0) {
 				z++;
 			}
 			else{
@@ -199,18 +238,42 @@ void display_img() {
 	}
 }
 
+void display_update() {
+	int i, j, k;
+	int c;
+	for(i = 0; i < 4; i++) {
+		DISPLAY_COMMAND_DATA_PORT &= ~DISPLAY_COMMAND_DATA_MASK;
+		spi_send_recv(0x22);
+		spi_send_recv(i);
+
+		spi_send_recv(0x0);
+		spi_send_recv(0x10);
+
+		DISPLAY_COMMAND_DATA_PORT |= DISPLAY_COMMAND_DATA_MASK;
+
+		for(j = 0; j < 16; j++) {
+			c = textbuffer[i][j];
+			if(c & 0x80)
+				continue;
+
+			for(k = 0; k < 8; k++)
+				spi_send_recv(font[c*8 + k]);
+		}
+	}
+}
+
 // Function to convert a 4096 vector to a 512 vector which we can send to the display.
 const uint8_t const* eightbin_conv (int bredd, const uint8_t const *data) {
 	 uint8_t new_data[bredd * 4];
 	 int i;
-	 for (i = 0; i < bredd * 4; i++){
+	 for (i = 0; i < bredd * 4; i++) {
 		 new_data[i] = 0;
 	 }
 	 int bin, eightbit;
 	 int onebit = 0;
 	 int onebit_spot = 0;
-	 for (eightbit = 0; eightbit < bredd * 4; eightbit++){
-			for (bin = 0; bin < bredd; bin++){
+	 for (eightbit = 0; eightbit < bredd * 4; eightbit++) {
+			for (bin = 0; bin < bredd; bin++) {
 				new_data[eightbit] += data[onebit] * pow(2, bin);
 				onebit += bredd;
 			}
@@ -233,23 +296,24 @@ int getbtns (void) {
 }
 
 // Display the start screen.
-void start(){
+void start() {
   add_img(0,0,512, start_screen);
-  while(1){
+  while(1) {
     display_img();
-    if (getbtns() == 1)
-      break;
+    if (getbtns() == 2 && !btn_pressed){
+				btn_pressed = 1;
+				break;
+		}
   }
-  delay(10000);
+	btn_pressed = 0;
 }
 
 // Display the settings.
 void settings_select() {
-	if (display_settings == 1){
-		delay(100000);
+	if (display_settings == 1) {
 		int wait = 0;
 		int previous = 0;
-		while(1){
+		while(1) {
 			if (wait < 1) {
 				if (getbtns() == 1) {
 					if (previous == 0) {
@@ -273,8 +337,9 @@ void settings_select() {
 					}
 					wait = 700;
 				}
-				if (getbtns() == 4){
-						//break;
+				if (getbtns() == 4 && !btn_pressed){
+						btn_pressed = 1;
+						break;
 				}
 				display_img();
 			}
@@ -283,78 +348,83 @@ void settings_select() {
 			delay(10000);
 		}
 	}
+	btn_pressed = 0;
 }
 
 // Display the menu.
 void start_select() {
-  delay(100000);
-  int wait = 0;
+	int wait = 0;
   int previous = 0;
-  while(1){
-		random_seed2 += 11;
-		random_seed += 1;
-    if (wait < 1) {
-      if (getbtns() == 1) {
-        if (previous == 0) {
-          add_img(0, 0, 512, Start_start);
-          previous = 1;
-        }
-        else {
-          add_img(0, 0, 512, Start_settings);
-          previous = 0;
-        }
-        wait = 700;
-      }
-      if (getbtns() == 2) {
-        if (previous == 0) {
-          add_img(0, 0, 512, Start_start);
-          previous = 1;
-        }
-        else {
-          add_img(0, 0, 512, Start_settings);
-          previous = 0;
-        }
-        wait = 700;
-      }
-      if (getbtns() == 4){
-				if (previous == 1){
+  while(1) {
+		if (wait < 1) {
+			random_seed2 += 11;
+			random_seed += 1;
+	    if (getbtns() == 1) {
+	      if (previous == 0) {
+	        add_img(0, 0, 512, Start_start);
+	        previous = 1;
+	      }
+	      else {
+	        add_img(0, 0, 512, Start_settings);
+	        previous = 0;
+	      }
+				wait = 700;
+	    }
+	    if (getbtns() == 2) {
+	      if (previous == 0) {
+	        add_img(0, 0, 512, Start_start);
+	        previous = 1;
+	      }
+	      else {
+	        add_img(0, 0, 512, Start_settings);
+	        previous = 0;
+	      }
+				wait = 700;
+	    }
+			if (getbtns() == 4 && !btn_pressed){
+			  btn_pressed = 1;
+				if (previous == 1) {
 					display_settings = 0;
-					break;
 				}
 				else {
 					display_settings = 1;
-					break;
 				}
+				break;
 			}
 
-      display_img();
-    }
-    if (wait > 0)
-      wait--;
-    delay(10000);
+	    display_img();
+		}
+		if (wait > 0)
+			wait--;
+		delay(10000);
   }
+	btn_pressed = 0;
 }
 
 // Display Ep2 screen.
-void opening(){
+void opening() {
   add_img(0,0,512, ep2);
-  while(1){
+  while(1) {
     display_img();
-    if (getbtns() == 1)
-      break;
+		if (getbtns() == 2 && !btn_pressed){
+		    btn_pressed = 1;
+      	break;
+		}
   }
-  delay(1000000);
+	btn_pressed = 0;
 }
 
 // Display the story element
-void opening2(){
+void opening2() {
   add_img(0,0,512, story);
-  while(1){
+  while(1) {
     display_img();
-    if (getbtns() == 1)
-      break;
+    if (getbtns() == 1 && !btn_pressed){
+		    btn_pressed = 1;
+      	break;
+		}
   }
-  delay(1000000);
+	btn_pressed = 0;
 }
 
 // Run the actual game
@@ -368,32 +438,33 @@ void run_game() {
 	double object_x = 140;
 	double object2_x = 140;
 	double object3_x = 140;
+	score = 0;
 
 	// Game loop
 	while(1) {
 		random_seed += 1;
 		random_seed2 += 11;
 		// So that the user can't "fly".
-		if (j_time == 40){
+		if (j_time == 40) {
 			char_y = 2;
 			j_time = 0;
 		}
 
-		if(((object == 0 && char_y == 2 && (object3_x < 61) && (object3_x > 53)) || (object == 1 && char_y == 2 && (object3_x < 65) && (object3_x > 63))) || ((char_y == 2 && (object_x < 61) && (object_x > 53)) || (char_y == 2 && (object2_x < 65) && (object2_x > 63)))) {
+		if(((object == 0 && char_y == 2 && (object3_x < 57) && (object3_x > 49)) || (object == 1 && char_y == 2 && (object3_x < 65) && (object3_x > 63))) || ((char_y == 2 && (object_x < 61) && (object_x > 53)) || (char_y == 2 && (object2_x < 65) && (object2_x > 63)))) {
 				char_y = 3;
-				die = 5;
+				die = 500;
 		}
 
 		add_img(0, 0, 512, ground);
 
-		if (object == 0){
+		if (object == 0) {
 			add_img(object_x, 3, 16, hole);
 		}
-		if (object == 1){
+		if (object == 1) {
 			add_img(object2_x, 2, 4, flower);
 		}
-		if (object2 == 1){
-			if (object == 1){
+		if (object2 == 1) {
+			if (object == 1) {
 				object3_x = object_x + 35;
 				add_img(object3_x, 3, 16, hole);
 			}
@@ -403,14 +474,14 @@ void run_game() {
 			}
 		}
 
-		if (j_time == 0){
+		if (j_time == 0) {
 				add_img(62, char_y, 4, eightbin_conv(8, hat1));
 		}
 		else{
 			add_img(62, char_y, 4, eightbin_conv(8, jump));
 		}
 		delay(100000);
-		if (j_wait == 0){
+		if (j_wait == 0) {
 
 			// Jump.
 			if (getbtns() == 1) {
@@ -419,34 +490,36 @@ void run_game() {
 			}
 		}
 		display_img();
-		if (char_y == 1){
+		if (char_y == 1) {
 				j_time++;
 		}
-		if (j_wait > 0){
+		if (j_wait > 0) {
 				j_wait--;
 		}
 
-		if (object == 1){
+		if (object == 1) {
 			object2_x -= 0.8;
 		}
-		if (object == 0){
+		if (object == 0) {
 			object_x -= 0.8;
 		}
-		if (object2 == 1){
+		if (object2 == 1) {
 			if (object == 1)
 				object_x -= 0.8;
 			else
 				object2_x -= 0.8;
 		}
 
-		if (object2 != 1){
+		if (object2 != 1) {
 			if (object_x < -18) {
+				score += 1;
 				object = rand(random_seed) & 1;
 				object2 = rand(random_seed2) & 1;
 				object_x = 140;
 			}
 
 			if (object2_x < -18) {
+				score += 1;
 				object = rand(random_seed) & 1;
 				object2 = rand(random_seed2) & 1;
 				object2_x = 140;
@@ -454,6 +527,7 @@ void run_game() {
 		}
 		else {
 			if (object3_x < -18) {
+				score += 1;
 				object = rand(random_seed) & 1;
 				object2 = rand(random_seed2) & 1;
 				object_x = 140;
@@ -462,30 +536,77 @@ void run_game() {
 			}
 		}
 
-		if (char_y == 3){
-			if (die < 1){
-				break;
+		if (char_y == 3) {
+			while (die > -200){
+				add_img(0, 0, 512, ground);
+
+				if (object == 0) {
+					add_img(object_x - 4, 3, 16, hole);
+				}
+				if (object == 1) {
+					add_img(object2_x - 4, 2, 4, flower);
+				}
+				if (object2 == 1) {
+					if (object == 1) {
+						object3_x = object_x + 35;
+						add_img(object3_x - 4, 3, 16, hole);
+					}
+					else{
+						object3_x = object2_x + 35;
+						add_img(object3_x - 4, 2, 4, flower);
+					}
+				}
+
+				if (die > 400)
+					add_img(62 + 1, 1, 4, eightbin_conv(8, hat1));
+
+				if (die > 300 && die <= 400)
+					add_img(62 + 2, 0, 4, eightbin_conv(8, hat1));
+
+				if (die > 200 && die <= 300)
+					add_img(62 + 3, 1, 4, eightbin_conv(8, hat1));
+
+				if (die > 100 && die <= 200)
+					add_img(62 + 4, 2, 4, eightbin_conv(8, hat1));
+
+				if (die < 101 && die >= 0)
+					add_img(62 + 5, 3, 4, eightbin_conv(8, hat1));
+				display_img();
+				die--;
 			}
-			die--;
+				if (score > highscore)
+					highscore = score;
+				break;
 		}
 	}
 }
 
 // Display the You Died screen.
-void you_died(){
+void you_died() {
   add_img(0,0,512, died);
-  while(1){
-    display_img();
+	display_img();
+  while(1) {
     if (getbtns() == 1)
       break;
   }
-  delay(1000000);
+}
+
+void score_screen() {
+	display_string(0, "Your score:");
+	display_string(1, itoaconv(score));
+	display_string(2, "Highscore:");
+	display_string(3, itoaconv(highscore));
+	display_update();
+	while(1) {
+    if (getbtns() == 4)
+      break;
+  }
 }
 
 // Display the End screen.
-void victorious(){
+void victorious() {
   add_img(0,0,512, victory);
-  while(1){
+  while(1) {
     display_img();
     if (getbtns() == 1)
       break;

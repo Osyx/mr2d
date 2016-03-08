@@ -11,6 +11,7 @@ int main(void) {
 	opening();
 	run_game();
 	you_died();
+	score_screen();
 	main();
 
 	return 0;
