@@ -453,7 +453,7 @@ void run_game() {
         //Player dies and death animation is initialized
 		if(((object == 0 && char_y == 2 && (object3_x < 57) && (object3_x > 49)) || (object == 1 && char_y == 2 && (object3_x < 65) && (object3_x > 63))) || ((char_y == 2 && (object_x < 61) && (object_x > 53)) || (char_y == 2 && (object2_x < 65) && (object2_x > 63)))) {
 				char_y = 3;
-				die = 500;
+				die = 700;
 		}
 
 		add_img(0, 0, 512, ground);
@@ -474,7 +474,7 @@ void run_game() {
 				add_img(object3_x, 2, 4, flower);
 			}
 		}
-        
+
         //Generates character on ground
 		if (j_time == 0) {
 				add_img(62, char_y, 4, eightbin_conv(8, hat1));
@@ -514,7 +514,7 @@ void run_game() {
 			else
 				object2_x -= 0.8;
 		}
-        
+
         //Add points to the player's score and generate new obstacles
 		if (object2 != 1) {
 			if (object_x < -18) {
@@ -541,10 +541,10 @@ void run_game() {
 				object3_x = 140;
 			}
 		}
-    
+
 		if (char_y == 3) {
 			while (die > -200){
-				
+
                 //Generates background for death animation
                 add_img(0, 0, 512, ground);
 
@@ -565,19 +565,19 @@ void run_game() {
 					}
 				}
                 //Death animation
-				if (die > 400)
+				if (die > 600)
 					add_img(62 + 1, 1, 4, eightbin_conv(8, hat1));
 
-				if (die > 300 && die <= 400)
+				if (die > 500 && die <= 600)
 					add_img(62 + 2, 0, 4, eightbin_conv(8, hat1));
 
-				if (die > 200 && die <= 300)
+				if (die > 400 && die <= 500)
 					add_img(62 + 3, 1, 4, eightbin_conv(8, hat1));
 
-				if (die > 100 && die <= 200)
+				if (die > 300 && die <= 400)
 					add_img(62 + 4, 2, 4, eightbin_conv(8, hat1));
 
-				if (die < 101 && die >= 0)
+				if (die < 301 && die >= 200)
 					add_img(62 + 5, 3, 4, eightbin_conv(8, hat1));
 				display_img();
 				die--;
