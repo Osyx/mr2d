@@ -362,6 +362,7 @@ void run_game() {
   int j_time = 0;
 	int char_y = 2;
 	int j_wait = 0;
+	int die = 0;
 	int object = rand(random_seed) & 1;
 	int object2 = rand(random_seed) & 1;
 	double object_x = 140;
@@ -380,6 +381,7 @@ void run_game() {
 
 		if(((object == 0 && char_y == 2 && (object3_x < 61) && (object3_x > 53)) || (object == 1 && char_y == 2 && (object3_x < 65) && (object3_x > 63))) || ((char_y == 2 && (object_x < 61) && (object_x > 53)) || (char_y == 2 && (object2_x < 65) && (object2_x > 63)))) {
 				char_y = 3;
+				die = 5;
 		}
 
 		add_img(0, 0, 512, ground);
@@ -461,7 +463,10 @@ void run_game() {
 		}
 
 		if (char_y == 3){
-			break;
+			if (die < 1){
+				break;
+			}
+			die--;
 		}
 	}
 }
